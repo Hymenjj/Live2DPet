@@ -1,31 +1,14 @@
-# Live2DPet — AI 桌面宠物伴侣（Fork 增强版）
+# Live2DPet — AI 桌面宠物伴侣
 
 **[English](README.en.md)** | **[日本語](README.ja.md)** | **中文**
 
-> 本仓库 Fork 自 [x380kkm/Live2DPet](https://github.com/x380kkm/Live2DPet)，在原版基础上进行了以下增强修改。
+![GitHub stars](https://img.shields.io/github/stars/x380kkm/Live2DPet) ![License](https://img.shields.io/github/license/x380kkm/Live2DPet) ![Downloads](https://img.shields.io/github/downloads/x380kkm/Live2DPet/total) ![Last Commit](https://img.shields.io/github/last-commit/x380kkm/Live2DPet)
 
-基于 Electron 的桌面宠物。Live2D 角色常驻桌面，通过截屏和窗口感知理解你正在做什么，AI 大模型生成陪伴式对话，支持点击/拖拽等互动，关键帧视觉记忆让 AI 了解你的近期活动，VOICEVOX 语音合成实现语音输出。
+> 如果觉得有用，欢迎点个 [Star](https://github.com/x380kkm/Live2DPet) 支持一下 :)
+
+基于 Electron 的桌面宠物。Live2D 角色常驻桌面，通过截屏和窗口感知理解你正在做什么，AI 大模型生成陪伴式对话，支持点击/拖拽等互动，关键帧视觉记忆让 AI 了解你的近期活动，VOICEVOX 语音合成实现语音输出。开发过程中使用 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 进行 AI 辅助编程。
 
 > **隐私提示**: 本应用会定时截取屏幕画面并发送至你配置的 AI API 进行分析，截图不会保存到本地磁盘。请确保你信任所使用的 API 服务商，并注意避免在屏幕上显示敏感信息。
-
-## Fork 修改内容
-
-### 🔧 SSE 流式响应兼容
-
-原版仅支持标准 JSON 格式的 API 响应。部分第三方 API 代理/公益站可能忽略 `stream: false` 参数，强制返回 SSE（Server-Sent Events）流式格式，导致 `Unexpected token 'd', "data: {"id"...` 解析错误。
-
-本 Fork 的改进：
-- API 请求中显式设置 `stream: false`
-- 添加 SSE 流式响应兼容解析：先尝试 JSON 解析，失败时自动检测并解析 SSE 格式
-- 同时修改了 `ai-chat.js` 和 `translation-service.js`
-
-### 🏗️ GitHub Actions 自动构建
-
-新增 GitHub Actions 工作流（`.github/workflows/build.yml`），支持：
-- 手动触发构建（workflow_dispatch）
-- 推送 tag 时自动构建
-- 自动打包为 Windows 便携式 exe
-- 构建产物上传为 GitHub Artifacts，可直接下载
 
 <p align="center">
   <img src="assets/app-icon.png" width="128" alt="Live2DPet Icon">
@@ -63,21 +46,14 @@ Author：Cai Cat様
 
 ## 快速开始
 
-### 方式一：从 Actions 下载构建（推荐）
+### 方式一：直接下载（推荐）
 
-1. 打开本仓库的 [Actions 页面](https://github.com/Hymenjj/Live2DPet/actions)
-2. 点击最新的成功构建（绿色对勾 ✅）
-3. 在页面底部的 **Artifacts** 区域下载 **Live2DPet-portable**
-4. 解压 zip，双击 `Live2DPet.exe` 运行，无需安装
+从 [Releases](https://github.com/x380kkm/Live2DPet/releases) 下载 `Live2DPet.exe`，双击运行，无需安装。
 
-### 方式二：从上游 Releases 下载
-
-从上游 [Releases](https://github.com/x380kkm/Live2DPet/releases) 下载 `Live2DPet.exe`（不含本 Fork 的修改）。
-
-### 方式三：从源码运行
+### 方式二：从源码运行
 
 ```bash
-git clone https://github.com/Hymenjj/Live2DPet.git
+git clone https://github.com/x380kkm/Live2DPet.git
 cd Live2DPet
 npm install
 node launch.js
@@ -89,9 +65,7 @@ node launch.js
 
 ### 1. 配置 API
 
-启动后打开设置面板，在「API 设置」标签页填入 API 地址、密钥和模型名称。本应用兼容所有 OpenAI 格式的 API 接口，可使用 OpenRouter、第三方代理/公益站等。
-
-> **注意**: 使用第三方 API 代理时，模型名称需与该平台实际提供的名称一致。例如某些平台的模型名不带前缀（如 `grok-4.1-fast` 而非 `x-ai/grok-4.1-fast`）。
+启动后打开设置面板，在「API 设置」标签页填入 API 地址、密钥和模型名称。本应用兼容所有 OpenAI 格式的 API 接口，可使用 OpenRouter 等聚合平台。
 
 推荐使用支持 Vision 的模型以获得截屏感知能力：
 - 性价比推荐：Grok 系列
@@ -243,7 +217,6 @@ npm test
 
 - 关于截屏错误的 warning 请忽视，不影响正常使用
 - VVM 语音模型读取错误：前往 `C:\Users\你的用户名\AppData\Roaming\live2dpet\voicevox_core`，找到存放模型的文件夹，删除损坏的文件后重新下载
-- ~~部分第三方 API 代理/公益站返回 SSE 流式数据导致 JSON 解析错误~~ **（已在本 Fork 中修复）**
 
 <details>
 <summary>技术栈</summary>
