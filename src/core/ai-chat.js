@@ -92,7 +92,23 @@ class AIChatClient {
                 throw new Error(`API error ${response.status}: ${errorText}`);
             }
 
-            const data = await response.json();
+            // Read response as text first to handle both JSON and SSE formats
+            const responseText = await response.text();
+            let data;
+
+            try {
+                // Try parsing as regular JSON first
+                data = JSON.parse(responseText);
+            } catch (jsonError) {
+                // If JSON parsing fails, try parsing as SSE stream
+                if (responseText.startsWith('data:') || responseText.includes('\ndata:')) {
+                    console.log('[AIChatClient] Detected SSE stream response, parsing chunks...');
+                    data = this._parseSSEResponse(responseText);
+                } else {
+                    throw new Error(`Invalid API response: ${responseText.substring(0, 200)}`);
+                }
+            }
+
             if (!data.choices?.[0]?.message?.content) {
                 throw new Error('Empty API response');
             }
@@ -103,6 +119,39 @@ class AIChatClient {
             if (error.name === 'AbortError') throw new Error('API request timeout (120s)');
             throw error;
         }
+    }
+
+    /**
+     * Parse SSE (Server-Sent Events) stream response into a single completion object
+     * @param {string} text - Raw SSE response text
+     * @returns {object} Parsed completion object matching OpenAI format
+     */
+    _parseSSEResponse(text) {
+        const lines = text.split('\n');
+        let fullContent = '';
+        let model = '';
+        let id = '';
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data:')) continue;
+            const jsonStr = trimmed.slice(5).trim();
+            if (jsonStr === '[DONE]') break;
+            try {
+                const chunk = JSON.parse(jsonStr);
+                if (chunk.id) id = chunk.id;
+                if (chunk.model) model = chunk.model;
+                const delta = chunk.choices?.[0]?.delta;
+                if (delta?.content) fullContent += delta.content;
+            } catch (e) {
+                // Skip unparseable chunks
+            }
+        }
+
+        return {
+            id, model,
+            choices: [{ message: { role: 'assistant', content: fullContent } }]
+        };
     }
 
     cleanResponse(content) {

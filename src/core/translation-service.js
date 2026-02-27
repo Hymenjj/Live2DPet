@@ -81,7 +81,19 @@ class TranslationService {
             clearTimeout(timeoutId);
             if (!response.ok) return null;
 
-            const data = await response.json();
+            // Handle both JSON and SSE stream responses
+            const responseText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                if (responseText.startsWith('data:') || responseText.includes('\ndata:')) {
+                    data = this._parseSSEResponse(responseText);
+                } else {
+                    return null;
+                }
+            }
+
             const result = data.choices?.[0]?.message?.content?.trim();
             if (!result) return null;
 
@@ -95,6 +107,26 @@ class TranslationService {
             clearTimeout(timeoutId);
             throw err;
         }
+    }
+
+    /**
+     * Parse SSE stream response into a single completion object
+     */
+    _parseSSEResponse(text) {
+        const lines = text.split('\n');
+        let fullContent = '';
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data:')) continue;
+            const jsonStr = trimmed.slice(5).trim();
+            if (jsonStr === '[DONE]') break;
+            try {
+                const chunk = JSON.parse(jsonStr);
+                const delta = chunk.choices?.[0]?.delta;
+                if (delta?.content) fullContent += delta.content;
+            } catch (e) { /* skip */ }
+        }
+        return { choices: [{ message: { role: 'assistant', content: fullContent } }] };
     }
 
     _cacheSet(key, value) {
