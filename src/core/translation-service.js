@@ -72,7 +72,8 @@ class TranslationService {
                         { role: 'user', content: text }
                     ],
                     max_tokens: 1024,
-                    temperature: 0.3
+                    temperature: 0.3,
+                    stream: false
                 }),
                 signal: controller.signal
             });
