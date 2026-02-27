@@ -11,6 +11,15 @@ class AIChatClient {
         this.maxHistoryPairs = 3;
         this.isLoading = false;
         this.maxTokensMultiplier = 1.0;
+
+        // Token usage statistics
+        this._tokenStats = {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            requestCount: 0,
+            startTime: Date.now()
+        };
     }
 
     async init() {
@@ -113,6 +122,9 @@ class AIChatClient {
                 throw new Error('Empty API response');
             }
 
+            // Track token usage
+            this._trackUsage(data.usage);
+
             return this.cleanResponse(data.choices[0].message.content.trim());
         } catch (error) {
             clearTimeout(timeoutId);
@@ -174,6 +186,44 @@ class AIChatClient {
         } catch (error) {
             return { success: false, error: error.message };
         }
+    }
+
+    /**
+     * Track token usage from API response
+     */
+    _trackUsage(usage) {
+        if (!usage) return;
+        this._tokenStats.requestCount++;
+        this._tokenStats.promptTokens += (usage.prompt_tokens || 0);
+        this._tokenStats.completionTokens += (usage.completion_tokens || 0);
+        this._tokenStats.totalTokens += (usage.total_tokens || usage.prompt_tokens + usage.completion_tokens || 0);
+        console.log(`[AIChatClient] Token usage: +${usage.total_tokens || 0} (total: ${this._tokenStats.totalTokens})`);
+    }
+
+    /**
+     * Get accumulated token statistics
+     */
+    getTokenStats() {
+        const elapsed = Date.now() - this._tokenStats.startTime;
+        const minutes = Math.max(1, elapsed / 60000);
+        return {
+            ...this._tokenStats,
+            elapsedMs: elapsed,
+            tokensPerMinute: Math.round(this._tokenStats.totalTokens / minutes * 10) / 10
+        };
+    }
+
+    /**
+     * Reset token statistics
+     */
+    resetTokenStats() {
+        this._tokenStats = {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            requestCount: 0,
+            startTime: Date.now()
+        };
     }
 }
 

@@ -93,9 +93,6 @@ class Live2DAdapter extends ModelAdapter {
         this._buildParamMap();
         this._loadExpressionFiles();
 
-        // Auto-resize window to match model aspect ratio
-        this._autoResizeWindow();
-
         // Apply params every frame
         if (this.pixiApp) {
             this.pixiApp.ticker.add(() => {
@@ -110,47 +107,10 @@ class Live2DAdapter extends ModelAdapter {
         if (!this.model || !this.pixiApp) return;
         const w = window.innerWidth, h = window.innerHeight;
         const origW = this.model._origW || this.model.width;
-        const origH = this.model._origH || this.model.height;
-
-        // Fit model within window — use the smaller scale to avoid clipping
-        const scaleW = w / origW;
-        const scaleH = h / origH;
-        const scale = Math.min(scaleW, scaleH);
-
+        const scale = w / origW;
         this.model.scale.set(scale);
         this.model.x = w / 2;
-        this.model.y = h / 2;
-    }
-
-    /**
-     * Auto-resize the pet window to match the model's aspect ratio.
-     * Called once after model loads. Keeps width, adjusts height.
-     */
-    async _autoResizeWindow() {
-        if (!this.model) return;
-        const origW = this.model._origW || this.model.width;
-        const origH = this.model._origH || this.model.height;
-        const aspect = origH / origW;  // height / width ratio
-
-        // Target: use current window width, compute matching height
-        const targetW = Math.max(200, Math.round(window.innerWidth));
-        const targetH = Math.max(200, Math.round(targetW * aspect));
-
-        // Cap to screen size (80% of screen height max)
-        const maxH = Math.round(window.screen.availHeight * 0.8);
-        const finalH = Math.min(targetH, maxH);
-        const finalW = Math.round(finalH / aspect);
-
-        try {
-            if (window.electronAPI && window.electronAPI.setWindowSize) {
-                await window.electronAPI.setWindowSize(finalW, finalH);
-                console.log(`[Live2DAdapter] Auto-resized window to ${finalW}x${finalH} (model aspect: ${aspect.toFixed(2)})`);
-                // Re-fit after resize
-                setTimeout(() => this._fitModel(), 100);
-            }
-        } catch (e) {
-            console.warn('[Live2DAdapter] Auto-resize failed:', e);
-        }
+        this.model.y = h * (this.config.canvasYRatio || 0.60);
     }
 
     _buildParamMap() {
@@ -212,12 +172,12 @@ class Live2DAdapter extends ModelAdapter {
 
     _applyTracking() {
         const pm = this.config.paramMapping || {};
-        if (pm.angleX) this._setParam(pm.angleX, this._trackX * 30);
-        if (pm.angleY) this._setParam(pm.angleY, -this._trackY * 30);
-        if (pm.angleZ) this._setParam(pm.angleZ, this._trackX * -5);
+        if (pm.angleX)     this._setParam(pm.angleX, this._trackX * 30);
+        if (pm.angleY)     this._setParam(pm.angleY, -this._trackY * 30);
+        if (pm.angleZ)     this._setParam(pm.angleZ, this._trackX * -5);
         if (pm.bodyAngleX) this._setParam(pm.bodyAngleX, this._trackX * 8);
-        if (pm.eyeBallX) this._setParam(pm.eyeBallX, this._trackX);
-        if (pm.eyeBallY) this._setParam(pm.eyeBallY, -this._trackY);
+        if (pm.eyeBallX)   this._setParam(pm.eyeBallX, this._trackX);
+        if (pm.eyeBallY)   this._setParam(pm.eyeBallY, -this._trackY);
     }
 
     updateParams(trackX, trackY) {
@@ -481,8 +441,8 @@ class NullAdapter extends ModelAdapter {
 function createModelAdapter(modelConfig) {
     switch (modelConfig.type) {
         case 'live2d': return new Live2DAdapter(modelConfig);
-        case 'image': return new ImageAdapter(modelConfig);
-        default: return new NullAdapter(modelConfig);
+        case 'image':  return new ImageAdapter(modelConfig);
+        default:       return new NullAdapter(modelConfig);
     }
 }
 

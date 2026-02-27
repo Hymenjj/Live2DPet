@@ -253,40 +253,15 @@
             });
         }
 
-        // ========== Mouse Pass-through + Auto-hide ==========
-        let _isMouseOver = false;
-        let _isInteracting = false;  // true during drag/click
-        let _fadeTimer = null;
-
+        // ========== Hover Detection ==========
         document.getElementById('pet-container').addEventListener('mouseenter', () => {
             if (window.electronAPI && window.electronAPI.reportHoverState) {
                 window.electronAPI.reportHoverState(true);
             }
-            _isMouseOver = true;
-            // Delay fade-out slightly to allow click interaction
-            if (_fadeTimer) clearTimeout(_fadeTimer);
-            _fadeTimer = setTimeout(() => {
-                if (_isMouseOver && !_isInteracting) {
-                    // Fade out and enable pass-through
-                    document.body.style.transition = 'opacity 0.2s ease';
-                    document.body.style.opacity = '0.15';
-                    if (window.electronAPI?.setMousePassthrough) {
-                        window.electronAPI.setMousePassthrough(true, true);
-                    }
-                }
-            }, 300);
         });
         document.getElementById('pet-container').addEventListener('mouseleave', () => {
             if (window.electronAPI && window.electronAPI.reportHoverState) {
                 window.electronAPI.reportHoverState(false);
-            }
-            _isMouseOver = false;
-            if (_fadeTimer) clearTimeout(_fadeTimer);
-            // Restore opacity and disable pass-through
-            document.body.style.transition = 'opacity 0.3s ease';
-            document.body.style.opacity = '1.0';
-            if (window.electronAPI?.setMousePassthrough) {
-                window.electronAPI.setMousePassthrough(false, false);
             }
         });
 

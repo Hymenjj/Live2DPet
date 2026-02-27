@@ -172,26 +172,6 @@ document.getElementById('link-github').addEventListener('click', (e) => {
     if (window.electronAPI) window.electronAPI.openExternal('https://github.com/x380kkm/Live2DPet');
 });
 
-// ========== Token Stats ==========
-function updateTokenStatsUI() {
-    if (!petSystem || !petSystem.aiClient) return;
-    const stats = petSystem.aiClient.getTokenStats();
-    document.getElementById('stat-requests').textContent = stats.requestCount.toLocaleString();
-    document.getElementById('stat-total').textContent = stats.totalTokens.toLocaleString();
-    document.getElementById('stat-prompt').textContent = stats.promptTokens.toLocaleString();
-    document.getElementById('stat-completion').textContent = stats.completionTokens.toLocaleString();
-    document.getElementById('stat-rate').textContent = stats.tokensPerMinute.toLocaleString();
-}
-// Refresh every 5 seconds
-setInterval(updateTokenStatsUI, 5000);
-
-document.getElementById('btn-reset-stats').addEventListener('click', () => {
-    if (petSystem && petSystem.aiClient) {
-        petSystem.aiClient.resetTokenStats();
-        updateTokenStatsUI();
-    }
-});
-
 if (window.electronAPI) {
     window.electronAPI.onPetWindowClosed(() => {
         petSystem.isActive = false;
@@ -299,11 +279,11 @@ document.getElementById('btn-import-l2d').addEventListener('click', async () => 
     // Show info
     const motionCount = Object.values(scanResult.motions || {}).reduce((sum, arr) => sum + arr.length, 0);
     const info = [`${t('status.modelInfo')}${scanResult.modelName}`,
-    `${scannedParamIds.length} params`,
-    `${scanResult.expressions.length} expr`,
-    `${motionCount} motions`,
-    `Moc: ${scanResult.validation.mocValid ? '✓' : '✗'}`,
-    `Tex: ${scanResult.validation.texturesValid ? '✓' : '✗'}`
+        `${scannedParamIds.length} params`,
+        `${scanResult.expressions.length} expr`,
+        `${motionCount} motions`,
+        `Moc: ${scanResult.validation.mocValid ? '✓' : '✗'}`,
+        `Tex: ${scanResult.validation.texturesValid ? '✓' : '✗'}`
     ].join(' | ');
     document.getElementById('l2d-info').textContent = info;
 
@@ -377,8 +357,8 @@ function renderParamMapping() {
             <select class="param-select" data-key="${key}" style="flex:1;padding:4px;font-size:12px;border-radius:4px;">
                 <option value="">${t('status.unmapped')}</option>
                 ${sorted.map(id =>
-            `<option value="${id}" ${id === mapped ? 'selected' : ''}>${id}${id === suggested ? ' ★' : ''}</option>`
-        ).join('')}
+                    `<option value="${id}" ${id === mapped ? 'selected' : ''}>${id}${id === suggested ? ' ★' : ''}</option>`
+                ).join('')}
             </select>
         `;
         container.appendChild(row);

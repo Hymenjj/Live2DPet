@@ -34,7 +34,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveConfig: (data) => ipcRenderer.invoke('save-config', data),
     getCursorPosition: () => ipcRenderer.invoke('get-cursor-position'),
     showPetContextMenu: () => ipcRenderer.invoke('show-pet-context-menu'),
-    setMousePassthrough: (passthrough, forward) => ipcRenderer.invoke('set-mouse-passthrough', passthrough, forward),
 
     // Character card management
     listCharacters: () => ipcRenderer.invoke('list-characters'),

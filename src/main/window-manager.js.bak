@@ -21,36 +21,6 @@ function applyCSP(win) {
 function registerWindowHandlers(ctx, ipcMain, deps) {
     // deps: { BrowserWindow, path, screen, updateTrayMenu, basePath }
 
-    /**
-     * Calculate chat bubble position with screen boundary clamping.
-     * Default: above the pet. If no room above, show below.
-     */
-    function clampBubblePosition(petBounds, bubbleW, bubbleH) {
-        const { screen } = require('electron');
-        const display = screen.getDisplayNearestPoint({ x: petBounds.x, y: petBounds.y });
-        const workArea = display.workArea;
-
-        // Preferred position: centered above the pet's upper area
-        let x = Math.round(petBounds.x + (petBounds.width - bubbleW) / 2);
-        let y = Math.round(petBounds.y - bubbleH + petBounds.height * 0.25);
-
-        // If bubble goes above screen top, show below the pet instead
-        if (y < workArea.y) {
-            y = Math.round(petBounds.y + petBounds.height * 0.75);
-        }
-        // If bubble goes below screen bottom, clamp to bottom
-        if (y + bubbleH > workArea.y + workArea.height) {
-            y = workArea.y + workArea.height - bubbleH;
-        }
-        // Clamp x to screen bounds
-        if (x < workArea.x) x = workArea.x;
-        if (x + bubbleW > workArea.x + workArea.width) {
-            x = workArea.x + workArea.width - bubbleW;
-        }
-
-        return { x, y };
-    }
-
     function createSettingsWindow() {
         ctx.settingsWindow = new deps.BrowserWindow({
             width: 480,
@@ -121,22 +91,6 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
             }
             deps.updateTrayMenu();
 
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-
-    // Mouse pass-through control for pet window
-    ipcMain.handle('set-mouse-passthrough', async (event, passthrough, forward) => {
-        try {
-            if (ctx.petWindow && !ctx.petWindow.isDestroyed()) {
-                if (passthrough) {
-                    ctx.petWindow.setIgnoreMouseEvents(true, { forward: !!forward });
-                } else {
-                    ctx.petWindow.setIgnoreMouseEvents(false);
-                }
-            }
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -220,12 +174,11 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
             }
 
             const petBounds = ctx.petWindow.getBounds();
-            const bubbleW = 250, bubbleH = 80;
-            const pos = clampBubblePosition(petBounds, bubbleW, bubbleH);
 
             ctx.chatBubbleWindow = new deps.BrowserWindow({
-                width: bubbleW, height: bubbleH,
-                x: pos.x, y: pos.y,
+                width: 250, height: 80,
+                x: petBounds.x + (petBounds.width - 250) / 2,
+                y: petBounds.y - 80 + petBounds.height * 0.25,
                 frame: false, transparent: true, alwaysOnTop: true,
                 resizable: true, minimizable: false, maximizable: false,
                 fullscreenable: false, skipTaskbar: true, focusable: false,
@@ -267,9 +220,9 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
         try {
             if (ctx.chatBubbleWindow && !ctx.chatBubbleWindow.isDestroyed() && ctx.petWindow && !ctx.petWindow.isDestroyed()) {
                 const petBounds = ctx.petWindow.getBounds();
-                const pos = clampBubblePosition(petBounds, width, height);
                 ctx.chatBubbleWindow.setBounds({
-                    x: pos.x, y: pos.y,
+                    x: Math.round(petBounds.x + (petBounds.width - width) / 2),
+                    y: Math.round(petBounds.y - height + petBounds.height * 0.25),
                     width: width, height: height
                 });
                 if (!ctx.chatBubbleWindow.isVisible()) {
