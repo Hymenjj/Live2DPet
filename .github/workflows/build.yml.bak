@@ -3,8 +3,6 @@ name: Build Live2DPet
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 
@@ -34,14 +32,9 @@ jobs:
           ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
         run: npm run build
 
-      - name: Get version
-        id: version
-        shell: bash
-        run: echo "VERSION=$(node -p 'require(\"./package.json\").version')" >> $GITHUB_OUTPUT
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Live2DPet-v${{ steps.version.outputs.VERSION }}-portable
+          name: Live2DPet-portable
           path: dist/Live2DPet.exe
           retention-days: 30
