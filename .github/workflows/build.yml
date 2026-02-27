@@ -28,6 +28,8 @@ jobs:
         continue-on-error: true
 
       - name: Build portable exe
+        env:
+          ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
         run: npm run build
 
       - name: Upload artifact
