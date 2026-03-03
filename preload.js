@@ -98,6 +98,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onPetHit: (cb) => ipcRenderer.on('pet-hit', (e, data) => cb(data)),
     onModelConfigUpdate: (cb) => ipcRenderer.on('model-config-update', (e, config) => cb(config)),
     onConfigUpdate: (cb) => ipcRenderer.on('config-update', (e, config) => cb(config)),
+    onForceRestorePassthrough: (cb) => ipcRenderer.on('force-restore-passthrough', () => cb()),
 
     // External links
     openExternal: (url) => ipcRenderer.invoke('open-external', url),

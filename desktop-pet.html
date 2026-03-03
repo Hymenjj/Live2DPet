@@ -385,6 +385,17 @@
             }
         });
 
+        // Main process detected mouse left window — force restore
+        if (window.electronAPI?.onForceRestorePassthrough) {
+            window.electronAPI.onForceRestorePassthrough(() => {
+                if (_isFadedOut) {
+                    _isMouseOver = false;
+                    restoreFromPassthrough();
+                    console.log('[DesktopPet] Force-restored by main process mouse poll');
+                }
+            });
+        }
+
         // ========== Interaction Reporting (shared) ==========
         function reportInteraction(type, area, durationMs, extra) {
             console.log(`[DesktopPet] ${type}: area=${area} duration=${durationMs}ms`);

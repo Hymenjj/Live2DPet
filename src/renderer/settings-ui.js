@@ -206,12 +206,29 @@ document.getElementById('link-github').addEventListener('click', (e) => {
             }
         } catch (e) { }
     }
+    let _previewTimer = null;
     slider.addEventListener('input', () => {
         valueLabel.textContent = slider.value + '%';
+        // Debounced live preview: save offset + show preview bubble
+        if (_previewTimer) clearTimeout(_previewTimer);
+        _previewTimer = setTimeout(() => {
+            const val = parseInt(slider.value);
+            if (window.electronAPI?.saveConfig) {
+                window.electronAPI.saveConfig({ bubbleOffsetPct: val });
+            }
+            // Trigger a preview bubble so user can see position
+            if (window.electronAPI?.showPetChat) {
+                window.electronAPI.showPetChat('💬 气泡位置预览', 3000);
+            }
+        }, 300);
     });
     btnSave.addEventListener('click', () => {
         if (window.electronAPI && window.electronAPI.saveConfig) {
             window.electronAPI.saveConfig({ bubbleOffsetPct: parseInt(slider.value) });
+        }
+        // Also show a preview
+        if (window.electronAPI?.showPetChat) {
+            window.electronAPI.showPetChat('💬 气泡位置已保存', 3000);
         }
     });
 })();

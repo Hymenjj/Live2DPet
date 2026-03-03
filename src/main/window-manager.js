@@ -133,14 +133,48 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
         }
     });
 
-    // Mouse pass-through control for pet window
+    // Mouse pass-through control for pet window with main-process mouse polling
+    let _passthroughPollTimer = null;
+
+    function startPassthroughPoll() {
+        stopPassthroughPoll();
+        const { screen } = require('electron');
+        _passthroughPollTimer = setInterval(() => {
+            if (!ctx.petWindow || ctx.petWindow.isDestroyed()) {
+                stopPassthroughPoll();
+                return;
+            }
+            try {
+                const cursor = screen.getCursorScreenPoint();
+                const bounds = ctx.petWindow.getBounds();
+                const inside = cursor.x >= bounds.x && cursor.x <= bounds.x + bounds.width &&
+                    cursor.y >= bounds.y && cursor.y <= bounds.y + bounds.height;
+                if (!inside) {
+                    // Mouse is outside — tell renderer to restore
+                    ctx.petWindow.setIgnoreMouseEvents(false);
+                    ctx.petWindow.webContents.send('force-restore-passthrough');
+                    stopPassthroughPoll();
+                }
+            } catch (e) { /* window may be destroyed */ }
+        }, 500);
+    }
+
+    function stopPassthroughPoll() {
+        if (_passthroughPollTimer) {
+            clearInterval(_passthroughPollTimer);
+            _passthroughPollTimer = null;
+        }
+    }
+
     ipcMain.handle('set-mouse-passthrough', async (event, passthrough, forward) => {
         try {
             if (ctx.petWindow && !ctx.petWindow.isDestroyed()) {
                 if (passthrough) {
                     ctx.petWindow.setIgnoreMouseEvents(true, { forward: !!forward });
+                    startPassthroughPoll();
                 } else {
                     ctx.petWindow.setIgnoreMouseEvents(false);
+                    stopPassthroughPoll();
                 }
             }
             return { success: true };
