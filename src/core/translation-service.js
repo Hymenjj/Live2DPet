@@ -67,8 +67,8 @@ class TranslationService {
                             role: 'system',
                             content: 'あなたは翻訳機です。入力文を自然な日本語の完全な文に翻訳してください。英単語はカタカナに変換（例: YouTube→ユーチューブ、Discord→ディスコード）。翻訳結果の文だけを出力。説明・補足・比較・単語リスト・ローマ字は不要。出力にアルファベットを含めないこと。口調と感情を保持。'
                         },
-                        { role: 'user', content: '嘻嘻……你在看YouTube上的ASMR吧，杂鱼哥哥真是变态呢~' },
-                        { role: 'assistant', content: 'うふふ……ユーチューブでエーエスエムアール見てるでしょ、雑魚お兄ちゃんって本当に変態だよね～' },
+                        { role: 'user', content: '哇，今天YouTube上有好多有趣的视频！' },
+                        { role: 'assistant', content: 'わあ、今日ユーチューブに面白い動画がいっぱいあった！' },
                         { role: 'user', content: text }
                     ],
                     max_tokens: 1024,
