@@ -172,6 +172,24 @@ document.getElementById('link-github').addEventListener('click', (e) => {
     if (window.electronAPI) window.electronAPI.openExternal('https://github.com/x380kkm/Live2DPet');
 });
 
+// ========== Mouse Passthrough Toggle ==========
+(async function () {
+    const cb = document.getElementById('mouse-passthrough-enabled');
+    if (!cb) return;
+    // Load saved state
+    if (window.electronAPI && window.electronAPI.loadConfig) {
+        try {
+            const cfg = await window.electronAPI.loadConfig();
+            cb.checked = !!cfg.mousePassthrough;
+        } catch (e) { }
+    }
+    cb.addEventListener('change', () => {
+        if (window.electronAPI && window.electronAPI.saveConfig) {
+            window.electronAPI.saveConfig({ mousePassthrough: cb.checked });
+        }
+    });
+})();
+
 // ========== Token Stats ==========
 function updateTokenStatsUI() {
     if (!petSystem || !petSystem.aiClient) return;

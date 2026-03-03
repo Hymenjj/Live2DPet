@@ -23,9 +23,21 @@
 
 新增 GitHub Actions 工作流（`.github/workflows/build.yml`），支持：
 - 手动触发构建（workflow_dispatch）
-- 推送 tag 时自动构建
-- 自动打包为 Windows 便携式 exe
+- 推送 tag 或 main 分支时自动构建
+- 自动打包为 Windows 便携式 exe，Artifact 名称含版本号
 - 构建产物上传为 GitHub Artifacts，可直接下载
+
+### 🖱️ 鼠标穿透 & 气泡优化
+
+- **鼠标穿透开关**：可在设置页开启/关闭，关闭时可正常拖拽宠物
+- **气泡鼠标穿透**：聊天气泡不再阻挡鼠标点击
+- **气泡位置优化**：气泡显示在宠物正上方，不再遮挡模型
+
+### 📊 Token 统计持久化
+
+- Token 用量数据自动保存到配置文件，重启后不再归零
+- 可在设置页中查看请求次数、总 Token、Prompt/Completion Token 和速率
+- 支持一键重置统计数据
 
 <p align="center">
   <img src="assets/app-icon.png" width="128" alt="Live2DPet Icon">

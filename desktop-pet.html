@@ -257,12 +257,31 @@
         let _isMouseOver = false;
         let _isInteracting = false;  // true during drag/click
         let _fadeTimer = null;
+        let _passthroughEnabled = false;  // controlled by settings toggle
+
+        // Load passthrough setting from config
+        if (window.electronAPI && window.electronAPI.loadConfig) {
+            window.electronAPI.loadConfig().then(cfg => {
+                _passthroughEnabled = !!cfg.mousePassthrough;
+                console.log('[DesktopPet] Mouse passthrough:', _passthroughEnabled);
+            });
+        }
+        // Listen for config updates from settings
+        if (window.electronAPI && window.electronAPI.onConfigUpdate) {
+            window.electronAPI.onConfigUpdate((cfg) => {
+                if (cfg.mousePassthrough !== undefined) {
+                    _passthroughEnabled = !!cfg.mousePassthrough;
+                    console.log('[DesktopPet] Mouse passthrough updated:', _passthroughEnabled);
+                }
+            });
+        }
 
         document.getElementById('pet-container').addEventListener('mouseenter', () => {
             if (window.electronAPI && window.electronAPI.reportHoverState) {
                 window.electronAPI.reportHoverState(true);
             }
             _isMouseOver = true;
+            if (!_passthroughEnabled) return;  // Skip if passthrough disabled
             // Delay fade-out slightly to allow click interaction
             if (_fadeTimer) clearTimeout(_fadeTimer);
             _fadeTimer = setTimeout(() => {
@@ -282,6 +301,7 @@
             }
             _isMouseOver = false;
             if (_fadeTimer) clearTimeout(_fadeTimer);
+            if (!_passthroughEnabled) return;  // Skip if passthrough disabled
             // Restore opacity and disable pass-through
             document.body.style.transition = 'opacity 0.3s ease';
             document.body.style.opacity = '1.0';

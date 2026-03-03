@@ -35,6 +35,15 @@ class AIChatClient {
                 if (config.baseURL) this.baseURL = config.baseURL;
                 if (config.modelName) this.modelName = config.modelName;
                 if (config.maxTokensMultiplier) this.maxTokensMultiplier = Math.min(4.0, Math.max(0.5, config.maxTokensMultiplier));
+                // Restore persisted token stats
+                if (config.tokenStats) {
+                    this._tokenStats.promptTokens = config.tokenStats.promptTokens || 0;
+                    this._tokenStats.completionTokens = config.tokenStats.completionTokens || 0;
+                    this._tokenStats.totalTokens = config.tokenStats.totalTokens || 0;
+                    this._tokenStats.requestCount = config.tokenStats.requestCount || 0;
+                    this._tokenStats.startTime = config.tokenStats.startTime || Date.now();
+                    console.log('[AIChatClient] Restored token stats:', this._tokenStats.totalTokens, 'total tokens');
+                }
             }
         } catch (e) {
             console.warn('[AIChatClient] Failed to load config:', e);
@@ -198,6 +207,17 @@ class AIChatClient {
         this._tokenStats.completionTokens += (usage.completion_tokens || 0);
         this._tokenStats.totalTokens += (usage.total_tokens || usage.prompt_tokens + usage.completion_tokens || 0);
         console.log(`[AIChatClient] Token usage: +${usage.total_tokens || 0} (total: ${this._tokenStats.totalTokens})`);
+        // Persist token stats to config
+        this._saveTokenStats();
+    }
+
+    /**
+     * Save token stats to persistent config
+     */
+    _saveTokenStats() {
+        if (window.electronAPI && window.electronAPI.saveConfig) {
+            window.electronAPI.saveConfig({ tokenStats: { ...this._tokenStats } });
+        }
     }
 
     /**
@@ -224,6 +244,8 @@ class AIChatClient {
             requestCount: 0,
             startTime: Date.now()
         };
+        // Persist reset state
+        this._saveTokenStats();
     }
 }
 

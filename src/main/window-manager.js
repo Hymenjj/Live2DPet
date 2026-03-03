@@ -30,13 +30,13 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
         const display = screen.getDisplayNearestPoint({ x: petBounds.x, y: petBounds.y });
         const workArea = display.workArea;
 
-        // Preferred position: centered above the pet's upper area
+        // Preferred position: centered above the pet (no overlap, 5px gap)
         let x = Math.round(petBounds.x + (petBounds.width - bubbleW) / 2);
-        let y = Math.round(petBounds.y - bubbleH + petBounds.height * 0.25);
+        let y = Math.round(petBounds.y - bubbleH - 5);
 
         // If bubble goes above screen top, show below the pet instead
         if (y < workArea.y) {
-            y = Math.round(petBounds.y + petBounds.height * 0.75);
+            y = Math.round(petBounds.y + petBounds.height + 5);
         }
         // If bubble goes below screen bottom, clamp to bottom
         if (y + bubbleH > workArea.y + workArea.height) {
@@ -238,6 +238,8 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
             });
             ctx.chatBubbleWindow.setAlwaysOnTop(true, 'screen-saver');
             ctx.chatBubbleWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+            // Enable mouse pass-through on chat bubble so it doesn't block interaction
+            ctx.chatBubbleWindow.setIgnoreMouseEvents(true, { forward: false });
             await ctx.chatBubbleWindow.loadFile(deps.path.join(deps.basePath, 'pet-chat-bubble.html'));
             applyCSP(ctx.chatBubbleWindow);
 

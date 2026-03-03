@@ -30,6 +30,10 @@ function registerUtilityIPC(ctx, ipcMain, deps) {
             const config = await configManager.loadConfigFile();
             ctx.petWindow.webContents.send('model-config-update', config.model);
         }
+        // Notify pet window when passthrough setting changes
+        if (data.mousePassthrough !== undefined && ctx.petWindow && !ctx.petWindow.isDestroyed()) {
+            ctx.petWindow.webContents.send('config-update', { mousePassthrough: data.mousePassthrough });
+        }
         return result;
     });
 
@@ -42,22 +46,26 @@ function registerUtilityIPC(ctx, ipcMain, deps) {
         if (!ctx.petWindow || ctx.petWindow.isDestroyed()) return;
         const sizes = [200, 300, 400, 500];
         const template = [
-            { label: mt('main.size'), submenu: sizes.map(s => ({
-                label: `${s}x${s}`,
-                click: () => {
-                    ctx.petWindow.setResizable(true);
-                    ctx.petWindow.setSize(s, s);
-                    ctx.petWindow.setResizable(false);
-                    ctx.petWindow.webContents.send('size-changed', s);
-                }
-            }))},
+            {
+                label: mt('main.size'), submenu: sizes.map(s => ({
+                    label: `${s}x${s}`,
+                    click: () => {
+                        ctx.petWindow.setResizable(true);
+                        ctx.petWindow.setSize(s, s);
+                        ctx.petWindow.setResizable(false);
+                        ctx.petWindow.webContents.send('size-changed', s);
+                    }
+                }))
+            },
             { type: 'separator' },
-            { label: mt('main.settings'), click: () => {
-                if (ctx.settingsWindow && !ctx.settingsWindow.isDestroyed()) {
-                    ctx.settingsWindow.show(); ctx.settingsWindow.focus();
-                } else { deps.createSettingsWindow(); }
-            }},
-            { label: mt('main.close'), click: () => { if (ctx.petWindow && !ctx.petWindow.isDestroyed()) ctx.petWindow.close(); }}
+            {
+                label: mt('main.settings'), click: () => {
+                    if (ctx.settingsWindow && !ctx.settingsWindow.isDestroyed()) {
+                        ctx.settingsWindow.show(); ctx.settingsWindow.focus();
+                    } else { deps.createSettingsWindow(); }
+                }
+            },
+            { label: mt('main.close'), click: () => { if (ctx.petWindow && !ctx.petWindow.isDestroyed()) ctx.petWindow.close(); } }
         ];
         Menu.buildFromTemplate(template).popup({ window: ctx.petWindow });
     });

@@ -97,6 +97,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onPetHoverState: (cb) => ipcRenderer.on('pet-hover-state', (e, hovering) => cb(hovering)),
     onPetHit: (cb) => ipcRenderer.on('pet-hit', (e, data) => cb(data)),
     onModelConfigUpdate: (cb) => ipcRenderer.on('model-config-update', (e, config) => cb(config)),
+    onConfigUpdate: (cb) => ipcRenderer.on('config-update', (e, config) => cb(config)),
 
     // External links
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
