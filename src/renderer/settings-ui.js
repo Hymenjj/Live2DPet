@@ -190,6 +190,32 @@ document.getElementById('link-github').addEventListener('click', (e) => {
     });
 })();
 
+// ========== Bubble Offset Slider ==========
+(async function () {
+    const slider = document.getElementById('bubble-offset-slider');
+    const valueLabel = document.getElementById('bubble-offset-value');
+    const btnSave = document.getElementById('btn-save-bubble-offset');
+    if (!slider || !valueLabel || !btnSave) return;
+    // Load saved value
+    if (window.electronAPI && window.electronAPI.loadConfig) {
+        try {
+            const cfg = await window.electronAPI.loadConfig();
+            if (cfg.bubbleOffsetPct != null) {
+                slider.value = cfg.bubbleOffsetPct;
+                valueLabel.textContent = cfg.bubbleOffsetPct + '%';
+            }
+        } catch (e) { }
+    }
+    slider.addEventListener('input', () => {
+        valueLabel.textContent = slider.value + '%';
+    });
+    btnSave.addEventListener('click', () => {
+        if (window.electronAPI && window.electronAPI.saveConfig) {
+            window.electronAPI.saveConfig({ bubbleOffsetPct: parseInt(slider.value) });
+        }
+    });
+})();
+
 // ========== Token Stats ==========
 function updateTokenStatsUI() {
     if (!petSystem || !petSystem.aiClient) return;
@@ -561,6 +587,12 @@ document.getElementById('btn-save-model').addEventListener('click', async () => 
             currentModelConfig.hasExpressions = false;
             currentModelConfig.expressions = [];
         }
+    }
+
+    // Guard: don't overwrite valid model config with empty/none config
+    if (currentModelConfig.type === 'none' && !currentModelConfig.folderPath && !currentModelConfig.staticImagePath && !currentModelConfig.imageFolderPath) {
+        showStatus('model-status', '⚠️ 没有导入模型，无需保存', 'error');
+        return;
     }
 
     await window.electronAPI.saveConfig({ model: currentModelConfig });

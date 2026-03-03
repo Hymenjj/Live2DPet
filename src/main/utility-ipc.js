@@ -34,6 +34,10 @@ function registerUtilityIPC(ctx, ipcMain, deps) {
         if (data.mousePassthrough !== undefined && ctx.petWindow && !ctx.petWindow.isDestroyed()) {
             ctx.petWindow.webContents.send('config-update', { mousePassthrough: data.mousePassthrough });
         }
+        // Update bubble offset percentage in ctx for clampBubblePosition
+        if (data.bubbleOffsetPct != null) {
+            ctx._bubbleOffsetPct = Math.max(0, Math.min(100, data.bubbleOffsetPct));
+        }
         return result;
     });
 

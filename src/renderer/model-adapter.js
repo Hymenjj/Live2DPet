@@ -132,14 +132,23 @@ class Live2DAdapter extends ModelAdapter {
         const origH = this.model._origH || this.model.height;
         const aspect = origH / origW;  // height / width ratio
 
-        // Target: use current window width, compute matching height
-        const targetW = Math.max(200, Math.round(window.innerWidth));
-        const targetH = Math.max(200, Math.round(targetW * aspect));
+        let finalW, finalH;
 
-        // Cap to screen size (80% of screen height max)
-        const maxH = Math.round(window.screen.availHeight * 0.8);
-        const finalH = Math.min(targetH, maxH);
-        const finalW = Math.round(finalH / aspect);
+        if (aspect >= 1) {
+            // Tall model (portrait): keep width, compute height
+            const targetW = Math.max(200, Math.round(window.innerWidth));
+            const targetH = Math.max(200, Math.round(targetW * aspect));
+            const maxH = Math.round(window.screen.availHeight * 0.8);
+            finalH = Math.min(targetH, maxH);
+            finalW = Math.round(finalH / aspect);
+        } else {
+            // Wide model (landscape): keep height, compute width — limit width to 50% screen
+            const targetH = Math.max(200, Math.round(window.innerHeight));
+            const targetW = Math.max(200, Math.round(targetH / aspect));
+            const maxW = Math.round(window.screen.availWidth * 0.5);
+            finalW = Math.min(targetW, maxW);
+            finalH = Math.round(finalW * aspect);
+        }
 
         try {
             if (window.electronAPI && window.electronAPI.setWindowSize) {

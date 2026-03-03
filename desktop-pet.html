@@ -1,59 +1,100 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            width: 100%; height: 100%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
             background: transparent;
             overflow: hidden;
             user-select: none;
             -webkit-app-region: drag;
         }
+
         #pet-container {
-            width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
         }
+
         #live2d-canvas {
-            position: absolute; top: 0; left: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
             -webkit-app-region: no-drag;
         }
+
         #static-image {
             position: absolute;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             width: 100%;
             height: auto;
             transform-origin: top center;
             display: none;
             -webkit-app-region: no-drag;
         }
+
         #placeholder {
-            max-width: 80%; max-height: 80%;
+            max-width: 80%;
+            max-height: 80%;
             object-fit: contain;
             display: none;
         }
+
         .controls {
-            position: absolute; bottom: 5px; right: 5px;
-            display: flex; gap: 3px;
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            display: flex;
+            gap: 3px;
             -webkit-app-region: no-drag;
-            opacity: 0; transition: opacity 0.3s;
+            opacity: 0;
+            transition: opacity 0.3s;
             z-index: 100;
         }
-        #pet-container:hover .controls { opacity: 1; }
-        .ctrl-btn {
-            width: 24px; height: 24px;
-            border: none; border-radius: 50%;
-            background: rgba(255,255,255,0.8);
-            cursor: pointer; font-size: 12px;
-            display: flex; align-items: center; justify-content: center;
+
+        #pet-container:hover .controls {
+            opacity: 1;
         }
-        .ctrl-btn:hover { background: rgba(255,255,255,1); }
-        .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+
+        .ctrl-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
     </style>
 </head>
+
 <body>
     <div id="pet-container">
         <canvas id="live2d-canvas"></canvas>
@@ -78,7 +119,7 @@
                 const orig = console[level];
                 console[level] = (...args) => {
                     orig.apply(console, args);
-                    try { window.electronAPI.rendererLog(level, args.map(String)); } catch {}
+                    try { window.electronAPI.rendererLog(level, args.map(String)); } catch { }
                 };
             }
         }
@@ -139,7 +180,7 @@
                     if (currentAdapter) {
                         currentAdapter.updateParams(trackX, trackY);
                     }
-                } catch (e) {}
+                } catch (e) { }
             }, 50);
         }
 
@@ -258,6 +299,8 @@
         let _isInteracting = false;  // true during drag/click
         let _fadeTimer = null;
         let _passthroughEnabled = false;  // controlled by settings toggle
+        let _isFadedOut = false;  // track current fade state
+        let _safetyTimer = null;  // safety net timer
 
         // Load passthrough setting from config
         if (window.electronAPI && window.electronAPI.loadConfig) {
@@ -272,8 +315,34 @@
                 if (cfg.mousePassthrough !== undefined) {
                     _passthroughEnabled = !!cfg.mousePassthrough;
                     console.log('[DesktopPet] Mouse passthrough updated:', _passthroughEnabled);
+                    // If disabled while faded, restore immediately
+                    if (!_passthroughEnabled && _isFadedOut) {
+                        restoreFromPassthrough();
+                    }
                 }
             });
+        }
+
+        function restoreFromPassthrough() {
+            _isFadedOut = false;
+            document.body.style.transition = 'opacity 0.3s ease';
+            document.body.style.opacity = '1.0';
+            if (window.electronAPI?.setMousePassthrough) {
+                window.electronAPI.setMousePassthrough(false, false);
+            }
+        }
+
+        function startSafetyTimer() {
+            if (_safetyTimer) clearInterval(_safetyTimer);
+            // Safety net: check every 2s — if faded but mouse not over, restore
+            _safetyTimer = setInterval(() => {
+                if (_isFadedOut && !_isMouseOver) {
+                    console.log('[DesktopPet] Safety net: restoring from stuck fade');
+                    restoreFromPassthrough();
+                    clearInterval(_safetyTimer);
+                    _safetyTimer = null;
+                }
+            }, 2000);
         }
 
         document.getElementById('pet-container').addEventListener('mouseenter', () => {
@@ -287,11 +356,13 @@
             _fadeTimer = setTimeout(() => {
                 if (_isMouseOver && !_isInteracting) {
                     // Fade out and enable pass-through
+                    _isFadedOut = true;
                     document.body.style.transition = 'opacity 0.2s ease';
                     document.body.style.opacity = '0.15';
                     if (window.electronAPI?.setMousePassthrough) {
                         window.electronAPI.setMousePassthrough(true, true);
                     }
+                    startSafetyTimer();
                 }
             }, 300);
         });
@@ -303,10 +374,14 @@
             if (_fadeTimer) clearTimeout(_fadeTimer);
             if (!_passthroughEnabled) return;  // Skip if passthrough disabled
             // Restore opacity and disable pass-through
-            document.body.style.transition = 'opacity 0.3s ease';
-            document.body.style.opacity = '1.0';
-            if (window.electronAPI?.setMousePassthrough) {
-                window.electronAPI.setMousePassthrough(false, false);
+            restoreFromPassthrough();
+        });
+
+        // Restore from passthrough on window blur (handles fullscreen game switch-back)
+        window.addEventListener('blur', () => {
+            if (_isFadedOut) {
+                _isMouseOver = false;
+                restoreFromPassthrough();
             }
         });
 
@@ -322,7 +397,7 @@
         // Canvas/image are no-drag; we handle click vs drag manually.
         // Uses screenX/screenY (absolute) to avoid jitter from window movement.
         // On every drag frame, setBounds locks both position AND size to prevent OS resize.
-        (function() {
+        (function () {
             let downX = 0, downY = 0, downTime = 0, isDragging = false;
             let winX = 0, winY = 0, winW = 0, winH = 0, boundsReady = false;
             const CLICK_THRESHOLD_MS = 300;
@@ -355,7 +430,7 @@
                         window.electronAPI.getWindowBounds().then(b => {
                             winX = b.x; winY = b.y; winW = b.width; winH = b.height;
                             boundsReady = true;
-                        }).catch(() => {});
+                        }).catch(() => { });
                     }
                 });
 
@@ -397,7 +472,7 @@
                     try {
                         const areas = currentAdapter.model.hitTest(x, y);
                         if (areas && areas.length > 0) return areas[0];
-                    } catch(e) { console.warn('[DesktopPet] hitTest error:', e); }
+                    } catch (e) { console.warn('[DesktopPet] hitTest error:', e); }
                 }
                 return 'body';
             }
@@ -408,4 +483,5 @@
         console.log('[DesktopPet] Window loaded');
     </script>
 </body>
+
 </html>

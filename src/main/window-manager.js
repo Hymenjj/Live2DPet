@@ -30,13 +30,19 @@ function registerWindowHandlers(ctx, ipcMain, deps) {
         const display = screen.getDisplayNearestPoint({ x: petBounds.x, y: petBounds.y });
         const workArea = display.workArea;
 
-        // Preferred position: centered above the pet (no overlap, 5px gap)
+        // Read custom bubble offset from config (0~100 slider, default 33 = 1/3 of pet height)
+        const bubbleOffsetPct = (ctx._bubbleOffsetPct != null) ? ctx._bubbleOffsetPct : 33;
+        // The model's head is roughly at 1/3 from pet window top
+        // Offset = petHeight * pct/100, so bubble bottom aligns closer to model head
+        const headOffset = Math.round(petBounds.height * bubbleOffsetPct / 100);
+
+        // Preferred position: centered above the pet head (no overlap, 2px gap)
         let x = Math.round(petBounds.x + (petBounds.width - bubbleW) / 2);
-        let y = Math.round(petBounds.y - bubbleH - 5);
+        let y = Math.round(petBounds.y + headOffset - bubbleH - 2);
 
         // If bubble goes above screen top, show below the pet instead
         if (y < workArea.y) {
-            y = Math.round(petBounds.y + petBounds.height + 5);
+            y = Math.round(petBounds.y + petBounds.height + 2);
         }
         // If bubble goes below screen bottom, clamp to bottom
         if (y + bubbleH > workArea.y + workArea.height) {

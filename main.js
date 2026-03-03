@@ -74,7 +74,11 @@ registerModelImport(ctx, ipcMain, {
 
 app.whenReady().then(async () => {
     ctx.pathUtils = createPathUtils(app, path);
-    try { ctx._cachedLang = (await configManager.loadConfigFile()).uiLanguage || 'en'; } catch {}
+    try {
+        const initConfig = await configManager.loadConfigFile();
+        ctx._cachedLang = initConfig.uiLanguage || 'en';
+        if (initConfig.bubbleOffsetPct != null) ctx._bubbleOffsetPct = initConfig.bubbleOffsetPct;
+    } catch { }
 
     ctx.ttsService = new TTSService();
     ctx.translationService = new TranslationService();
